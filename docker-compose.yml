@@ -1,0 +1,33 @@
+name: ollama
+
+services:
+  ollama:
+    image: ${OLLAMA_IMAGE:?Set OLLAMA_IMAGE to a pinned image tag}
+    restart: unless-stopped
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    environment:
+      OLLAMA_HOST: "0.0.0.0:11434"
+      OLLAMA_BIND_ADDRESS: ${OLLAMA_BIND_ADDRESS:?Set OLLAMA_BIND_ADDRESS}
+      OLLAMA_CONTEXT_LENGTH: ${OLLAMA_CONTEXT_LENGTH:?Set OLLAMA_CONTEXT_LENGTH}
+      NVIDIA_VISIBLE_DEVICES: ${NVIDIA_VISIBLE_DEVICES:-all}
+      NVIDIA_DRIVER_CAPABILITIES: ${NVIDIA_DRIVER_CAPABILITIES:-compute,utility}
+    ports:
+      - "${OLLAMA_BIND_ADDRESS:?Set OLLAMA_BIND_ADDRESS}:11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  ollama-models:
+    name: ollama-models
